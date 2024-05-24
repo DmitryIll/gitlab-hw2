@@ -1,0 +1,270 @@
+# Установка NGINX
+
+nano /etc/nginx/conf.d/default.conf
+
+    location / {
+        root   /usr/share/nginx/html/lighthouse;
+        index  index.html index.htm;
+    }
+
+#  nginx -s reload
+
+
+# git clone https://github.com/VKCOM/lighthouse.git
+
+# cd /usr/share/nginx/html
+# yum install git
+ cd /usr/share/nginx/html
+cd /etc/nginx/conf.d/
+# systemctl start nginx
+# systemctl enable nginx
+# yum install nginx
+
+#  yum update
+#  nano /etc/yum.repos.d/nginx.repo
+
+[nginx]
+name=nginx repo
+baseurl=http://nginx.org/packages/centos/$releasever/$basearch/
+gpgcheck=0
+enabled=1
+
+
+
+# Заметки по старту сервиса:
+
+Изучите, что такое [ClickHouse](https://www.youtube.com/watch?v=fjTNS2zkeBs) и [Vector](https://www.youtube.com/watch?v=CgEhyffisLY)
+
+
+- создать пользователя vector
+- создать папки
+ 
+mkdir -p vector &&   curl -sSfL --proto '=https' --tlsv1.2 https://packages.timber.io/vector/0.37.1/vector-0.37.1-x86_64-unknown-linux-musl.tar.gz  |   tar xzf - -C vector --strip-components=2
+
+echo "export PATH=\"$(pwd)/vector/bin:\$PATH\"" >> $HOME/.profile
+
+source $HOME/.profile
+echo $PATH
+vector --version
+useradd vector
+#mkdir /var/lib/vector
+cp -av etc/systemd/vector.service /etc/systemd/system
+yum install nano
+nano /etc/systemd/system/vector.service
+
+cp vector.yaml /etc/vector/vector.yaml
+ #mkdir /etc/vector
+ #cp /vector/config/vector.yaml /etc/vector/vector.yaml
+mkdir /var/lib/vector/
+ chown -R vector /var/lib/vector/
+ su vector
+/vector/bin/vector validate
+ catsystemctl start vector.service
+systemctl status vector.service
+journalctl -xe
+
+
+docker run -d --privileged --name test_systemd_centos oowy/centos:stream8
+docker exec -it test_systemd_centos bash
+# bash -c "$(curl -L https://setup.vector.dev)"
+# dnf install -y vector
+# systemctl start vector && systemctl status vector
+# docker rm -f test_systemd_centos
+
+
+docker run -d --privileged --name test_systemd_ubuntu oowy/ubuntu:20.04
+docker exec -it test_systemd_ubuntu bash
+#apt update && apt install -y curl
+#bash -c "$(curl -L https://setup.vector.dev)"
+#apt install -y vector
+#systemctl start vector && systemctl status vector
+#docker rm -f test_systemd_ubuntu
+
+Скачать  нужную версию:
+https://vector.dev/docs/setup/installation/manual/from-archives/
+
+
+
+# Latest (version 0.37.1)
+mkdir -p vector && \
+  curl -sSfL --proto '=https' --tlsv1.2 https://packages.timber.io/vector/0.37.1/vector-0.37.1-x86_64-unknown-linux-musl.tar.gz  | \
+  tar xzf - -C vector --strip-components=2
+  cd vector
+  echo "export PATH=\"$(pwd)/vector/bin:\$PATH\"" >> $HOME/.profile
+source $HOME/.profile
+vector --config config/vector.yaml
+mkdir /var/lib/vector
+
+#data_dir = "/var/lib/vector" # default
+
+
+#cp -av etc/init.d/vector /etc/init.d
+cp -av etc/systemd/vector.service /etc/systemd/system
+
+
+https://vector.dev/docs/reference/configuration/
+
+путь конфига: /etc/vector/vector.yaml
+
+
+
+---
+ cat /etc/vector/vector.yaml
+#                                    __   __  __
+#                                    \ \ / / / /
+#                                     \ V / / /
+#                                      \_/  \/
+#
+#                                    V E C T O R
+#                                   Configuration
+#
+# ------------------------------------------------------------------------------
+# Website: https://vector.dev
+# Docs: https://vector.dev/docs
+# Chat: https://chat.vector.dev
+# ------------------------------------------------------------------------------
+
+# Change this to use a non-default directory for Vector data storage:
+# data_dir: "/var/lib/vector"
+
+# Random Syslog-formatted logs
+sources:
+  dummy_logs:
+    type: "demo_logs"
+    format: "syslog"
+    interval: 1
+
+# Parse Syslog logs
+# See the Vector Remap Language reference for more info: https://vrl.dev
+transforms:
+  parse_logs:
+    type: "remap"
+    inputs: ["dummy_logs"]
+    source: |
+      . = parse_syslog!(string!(.message))
+
+# Print parsed logs to stdout
+sinks:
+  print:
+    type: "console"
+    inputs: ["parse_logs"]
+    encoding:
+      codec: "json"
+
+# Vector's GraphQL API (disabled by default)
+# Uncomment to try it out with the `vector top` command or
+# in your browser at http://localhost:8686
+# api:
+#   enabled: true
+#   address: "127.0.0.1:8686"
+
+
+---
+nano /etc/vector/examples/stdio.yaml 
+---
+# STDIO Example
+# ------------------------------------------------------------------------------
+# A simple STDIN / STDOUT example. This script is used in the getting started
+# guide:
+#
+# https://vector.dev/guides/getting-started
+
+sources:
+  in:
+    type: "stdin"
+
+sinks:
+  out:
+    inputs: [ "in" ]
+    type: "console"
+    encoding:
+      codec: "text"
+
+
+---
+# Set global options
+data_dir: "/var/lib/vector"
+
+# Vector's API (disabled by default)
+# Enable and try it out with the `vector top` command
+api:
+  enabled: false
+# address = "127.0.0.1:8686"
+
+# Ingest data by tailing one or more files
+sources:
+  apache_logs:
+    type: "file"
+    include:
+      - "/var/log/apache2/*.log" # supports globbing
+    ignore_older_secs: 86400     # 1 day
+
+# Structure and parse via Vector's Remap Language
+transforms:
+  apache_parser:
+    inputs:
+      - "apache_logs"
+    type: "remap"
+    source: ". = parse_apache_log(.message)"
+
+  # Sample the data to save on cost
+  apache_sampler:
+    inputs:
+      - "apache_parser"
+    type: "sample"
+    rate: 2 # only keep 50% (1/`rate`)
+
+# Send structured data to a short-term storage
+sinks:
+  es_cluster:
+    inputs:
+      - "apache_sampler"       # only take sampled data
+    type: "elasticsearch"
+    endpoints:
+      - "http://79.12.221.222:9200"
+    bulk:
+      index: "vector-%Y-%m-%d" # daily indices
+
+  # Send structured data to a cost-effective long-term storage
+  s3_archives:
+    inputs:
+      - "apache_parser" # don't sample for S3
+    type: "aws_s3"
+    region: "us-east-1"
+    bucket: "my-log-archives"
+    key_prefix: "date=%Y-%m-%d"   # daily partitions, hive friendly format
+    compression: "gzip"           # compress final objects
+    framing:
+      method: "newline_delimited" # new line delimited...
+    encoding:
+      codec: "json"               # ...JSON
+    batch:
+      max_bytes: 10000000         # 10mb uncompressed
+
+---
+
+vector --config /etc/vector/vector.yaml
+
+
+
+---
+  - name: Add docker repository
+    command: yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+
+  - name: Installing docker package
+    yum: >
+      name={{ item }}
+      state=present
+      update_cache=yes
+    with_items:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+
+  - name: Enable docker daemon
+    systemd:
+      name: docker
+      state: started
+      enabled: yes
+
+
