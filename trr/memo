@@ -1,5 +1,36 @@
-# Установка NGINX
 
+
+
+FROM python:3.9-slim
+
+ENV DB_HOST=172.20.0.10
+ENV DB_TABLE=requests
+ENV DB_USER=root
+ENV DB_NAME=db1
+ENV DB_PASSWORD=12345
+
+WORKDIR /app
+COPY requirements.txt ./
+RUN pip install -r requirements.txt
+COPY main.py ./
+CMD ["python", "main.py"]
+
+---
+docker build  -f Dockerfile.python -t mydoc .
+---
+
+export DB_HOST=172.20.0.10 \
+export DB_USER=root \
+export DB_PASSWORD=12345 \
+export DB_NAME=db1
+
+apt install python3.10-venv
+python3 -m venv venv
+. venv/bin/activate
+pip install -r requirements.txt
+python main.py
+
+# Установка NGINX
 nano /etc/nginx/conf.d/default.conf
 
     location / {

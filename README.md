@@ -125,6 +125,13 @@ sudo gitlab-ctl reconfigure
 
 В репозитории содержится код проекта на Python. Проект — RESTful API сервис. Ваша задача — автоматизировать сборку образа с выполнением python-скрипта:
 
+Тут пока ничего не заработало. 
+
+Не понял, от куда взялись лишние задачи:
+
+![alt text](image-20.png)
+
+
 1. Образ собирается на основе [centos:7](https://hub.docker.com/_/centos?tab=tags&page=1&ordering=last_updated).
 2. Python версии не ниже 3.7.
 3. Установлены зависимости: `flask` `flask-jsonpify` `flask-restful`.
