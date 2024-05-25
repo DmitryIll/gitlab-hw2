@@ -103,6 +103,45 @@ sudo gitlab-ctl reconfigure
 
 ![alt text](image-18.png)
 
+Привожу конфиг раннера:
+
+```
+root@git-run:~# cat /etc/gitlab-runner/config.toml
+concurrent = 1
+check_interval = 0
+connection_max_age = "15m0s"
+shutdown_timeout = 0
+
+[session_server]
+  session_timeout = 1800
+
+[[runners]]
+  name = "git-run"
+  url = "https://git.dmil.ru"
+  id = 1
+  token = "glrt-LFbmeZy7GsVnkPHV4H8u"
+  token_obtained_at = 2024-05-24T06:57:34Z
+  token_expires_at = 0001-01-01T00:00:00Z
+  executor = "docker"
+  [runners.custom_build_dir]
+  [runners.cache]
+    MaxUploadedArchiveSize = 0
+    [runners.cache.s3]
+    [runners.cache.gcs]
+    [runners.cache.azure]
+  [runners.docker]
+    tls_verify = false
+    image = "docker:latest"
+    privileged = false
+    disable_entrypoint_overwrite = false
+    oom_kill_disable = false
+    disable_cache = false
+    volumes = ["/cache"]
+    shm_size = 0
+    network_mtu = 0
+```
+
+
 3. (* Необязательное задание повышенной сложности. )  Если вы уже знакомы с k8s попробуйте выполнить задание, запустив gitlab server и gitlab runner в k8s  [по инструкции](https://cloud.yandex.ru/docs/tutorials/infrastructure-management/gitlab-containers). 
 
 4. Создайте свой новый проект.
