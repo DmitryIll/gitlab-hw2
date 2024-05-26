@@ -237,13 +237,13 @@ CMD ["python", "python-api.py"]
 В чем причина?
 
 Еще вопросы:
-Если я в .gitlab-ci.yml пропиши образы, например пробовал разные:
+Если я в .gitlab-ci.yml пропишу образы, например пробовал разные (сейчас закомментировал):
 
 ```
 
 build:
  stage: build
-  # image: docker:20.10.8-dind
+#  image: docker:20.10.8-dind
 #  image: centos:latest
 #  image: python:3.9-slim
  script:
