@@ -277,7 +277,97 @@ CMD ["python", "python-api.py"]
 
 Прошу помочь разобраться.
 
+Еще попробовал сделал второй раннер, на отедльнйо ВМ, но, раннер уже настроел внутри докер контейнера:
 
+- создал ВМ на убунте
+- установил докер
+
+```
+root@git-run2:~# docker run -ti --rm --name gitlab-runner  \
+     --network host \
+     -v /srv/gitlab-runner/config:/etc/gitlab-runner    \
+     -v /var/run/docker.sock:/var/run/docker.sock  \
+      gitlab/gitlab-runner:latest register \
+      --url https://git.dmil.ru  --token glrt-ZZZVJNoYGyut4q********U
+```
+
+![alt text](image-26.png)
+
+запустил временно контейнер, что бы создались вольюмы.
+
+далее 
+
+```
+nano /srv/gitlab-runner/config/config.toml
+```
+отредактировал:
+
+```
+concurrent = 1
+check_interval = 0
+shutdown_timeout = 0
+
+[session_server]
+  session_timeout = 1800
+
+[[runners]]
+  name = "run2"
+  url = "https://git.dmil.ru"
+  id = 2
+  token = "glrt-ZZZVJNoYGyut4q4vg23U"
+  token_obtained_at = 2024-05-27T07:07:11Z
+  token_expires_at = 0001-01-01T00:00:00Z
+  executor = "docker"
+  [runners.custom_build_dir]
+  [runners.cache]
+    MaxUploadedArchiveSize = 0
+    [runners.cache.s3]
+    [runners.cache.gcs]
+    [runners.cache.azure]
+  [runners.docker]
+    tls_verify = false
+    image = "docker:latest"
+    privileged = false
+    disable_entrypoint_overwrite = false
+    oom_kill_disable = false
+    disable_cache = false
+    #volumes = ["/cache"]
+    volumes = ["/cache", "/var/run/docker.sock:/var/run/docker.sock"]
+    shm_size = 0
+    network_mtu = 0
+```
+Запустил:
+
+```
+docker run -d --name gitlab-runner --restart always \
+      --network host \
+      -v /srv/gitlab-runner/config:/etc/gitlab-runner \
+      -v /var/run/docker.sock:/var/run/docker.sock \
+      gitlab/gitlab-runner:latest
+
+```
+
+
+![alt text](image-27.png)
+
+Первый раннер поставил на паузу:
+
+![alt text](image-28.png)
+
+Запустил сборку:
+
+![alt text](image-29.png)
+
+несколько раз:
+
+![alt text](image-30.png)
+
+Итого, получается проблема была в раннере?
+Что было не так?
+Как сделать раннер прям в ОС а не в контейнере?
+Почему не заработало если раннер прям в ОС был?
+
+Пока продолжу далее делать....
 
 ### DevOps
 
