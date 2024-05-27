@@ -256,6 +256,10 @@ ERROR: Job failed: exit code 1
 
 Что же не так?
 
+В виде скрина:
+
+![alt text](image-25.png)
+
 
 Докерфайл не меянл, пока такой:
 
