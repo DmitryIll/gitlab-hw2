@@ -160,54 +160,104 @@ shutdown_timeout = 0
 
 ## Основная часть
 
-### 2024.05.26
+### 2024.05.27
 
-Текущее состояние на 26 мая:
+Текущее состояние на 27 мая:
 
-Спасибо за пояснение. Файл .gitlab-ci.yml скорректировал.
+Спасибо за подсказки, но, пока не заработало.
+Указал везде уж где только можно docker:dind
+Пробовал уже много вариантмо по-разному, всегда ошибки.
+Что же не так, в чем причина?
 
-Создал свой проект на своем гитлабе и наполнил файлами:
 
-https://git.dmil.ru/mygroup/myproject
-
-Копию репозитория в текущем состоянии положил и сюда (т.к. моя ВМ может быть выключена):
-https://github.com/DmitryIll/gilab-hw-myproject/ 
-
-- там подготовил dockerfile, .gitlab-ci.yml и пр. что как думаю нужно для сборки.
-
-Опять требуется помощь, возникли вопросы:
-
-При создании gitlab раннера я указыал использовать docker:latest образ. Т.е. он (как я понял) должен будет стартовать на ВМ раннере при выполнении задач. 
-
-Но, получаю ошибку например такую:
-
-![alt text](image-22.png)
-
-При этом в .gitlab-ci.yaml
+Код:
 
 ```
-#  image: docker:20.10.8
-#  services:
-#    - docker:20.10.8-dind
-
+image: docker:dind
+services:
+  - docker:dind
 
 stages:
- - build
+  - build
 
 build:
- stage: build
-  # image: docker:20.10.8-dind
-#  image: centos:latest
-#  image: python:3.9-slim
- script:
-  - pwd
-  - ls -la
-  - docker --version
-  - docker build .
-
+  stage: build
+  image: docker:dind
+  script:
+    - docker --version
+    - docker build .
 ```
 
-в докерфайле:
+Опять ошибки:
+
+```
+Running with gitlab-runner 17.0.0 (44feccdf)
+  on git-run LFbmeZy7G, system ID: s_e77be7377126
+Preparing the "docker" executor 00:35
+Using Docker executor with image docker:dind ...
+Starting service docker:dind ...
+Pulling docker image docker:dind ...
+Using docker image sha256:d14813e41c93c4df721d287f3d3758e85e74da5edd9033d4897a0f6a44c94ca3 for docker:dind with digest docker@sha256:a811114bcd41954bc9b6577469ce7e648ee600c864e815e535aac79e50439352 ...
+Waiting for services to be up and running (timeout 30 seconds)...
+*** WARNING: Service runner-lfbmezy7g-project-1-concurrent-0-3b87b538ae2e9649-docker-0 probably didn't start properly.
+Health check error:
+service "runner-lfbmezy7g-project-1-concurrent-0-3b87b538ae2e9649-docker-0-wait-for-service" timeout
+Health check container logs:
+2024-05-27T05:34:10.812019564Z waiting for TCP connection to 172.17.0.2 on [2375 2376]...
+2024-05-27T05:34:10.812432382Z dialing 172.17.0.2:2376...
+2024-05-27T05:34:10.812720357Z dialing 172.17.0.2:2375...
+2024-05-27T05:34:11.814611160Z dialing 172.17.0.2:2376...
+2024-05-27T05:34:11.814876174Z dialing 172.17.0.2:2375...
+2024-05-27T05:34:12.816345444Z dialing 172.17.0.2:2375...
+2024-05-27T05:34:12.816406776Z dialing 172.17.0.2:2376...
+2024-05-27T05:34:13.816514583Z dialing 172.17.0.2:2376...
+2024-05-27T05:34:13.816563570Z dialing 172.17.0.2:2375...
+Service container logs:
+2024-05-27T05:34:12.771850235Z Certificate request self-signature ok
+2024-05-27T05:34:12.771978858Z subject=CN=docker:dind server
+2024-05-27T05:34:12.794387858Z /certs/server/cert.pem: OK
+2024-05-27T05:34:13.488436959Z Certificate request self-signature ok
+2024-05-27T05:34:13.488486589Z subject=CN=docker:dind client
+2024-05-27T05:34:13.511872680Z /certs/client/cert.pem: OK
+2024-05-27T05:34:13.515039643Z cat: can't open '/proc/net/ip6_tables_names': No such file or directory
+2024-05-27T05:34:13.515810406Z cat: can't open '/proc/net/arp_tables_names': No such file or directory
+2024-05-27T05:34:13.518428767Z ip: can't find device 'nf_tables'
+2024-05-27T05:34:13.519610187Z nf_tables             266240 43 nft_chain_nat,nft_counter,nft_compat
+2024-05-27T05:34:13.520104351Z nfnetlink              20480  4 nf_conntrack_netlink,nft_compat,nf_tables
+2024-05-27T05:34:13.520121011Z libcrc32c              16384  5 nf_nat,nf_conntrack,nf_tables,btrfs,raid456
+2024-05-27T05:34:13.520712327Z modprobe: can't change directory to '/lib/modules': No such file or directory
+2024-05-27T05:34:13.523028181Z ip: can't find device 'ip_tables'
+2024-05-27T05:34:13.524191282Z ip_tables              32768  0 
+2024-05-27T05:34:13.524522086Z x_tables               53248  5 xt_conntrack,xt_MASQUERADE,xt_addrtype,nft_compat,ip_tables
+2024-05-27T05:34:13.525236357Z modprobe: can't change directory to '/lib/modules': No such file or directory
+2024-05-27T05:34:13.527354198Z iptables v1.8.10 (nf_tables)
+2024-05-27T05:34:13.530233765Z mount: permission denied (are you root?)
+2024-05-27T05:34:13.530448404Z Could not mount /sys/kernel/security.
+2024-05-27T05:34:13.530464387Z AppArmor detection and --privileged mode might break.
+2024-05-27T05:34:13.531879729Z mount: permission denied (are you root?)
+*********
+Using docker image sha256:d14813e41c93c4df721d287f3d3758e85e74da5edd9033d4897a0f6a44c94ca3 for docker:dind with digest docker@sha256:a811114bcd41954bc9b6577469ce7e648ee600c864e815e535aac79e50439352 ...
+Preparing environment 00:01
+Running on runner-lfbmezy7g-project-1-concurrent-0 via git-run...
+Getting source from Git repository 00:01
+Fetching changes with git depth set to 20...
+Reinitialized existing Git repository in /builds/mygroup/myproject/.git/
+Checking out e04c53bc as detached HEAD (ref is main)...
+Skipping Git submodules setup
+Executing "step_script" stage of the job script 00:01
+Using docker image sha256:d14813e41c93c4df721d287f3d3758e85e74da5edd9033d4897a0f6a44c94ca3 for docker:dind with digest docker@sha256:a811114bcd41954bc9b6577469ce7e648ee600c864e815e535aac79e50439352 ...
+$ docker --version
+Docker version 26.1.3, build b72abbb
+$ docker build .
+ERROR: error during connect: Head "http://docker:2375/_ping": dial tcp: lookup docker on 192.168.10.2:53: no such host
+Cleaning up project directory and file based variables 00:00
+ERROR: Job failed: exit code 1
+```
+
+Что же не так?
+
+
+Докерфайл не меянл, пока такой:
 
 ```
 FROM python:3.9-slim
@@ -219,43 +269,7 @@ COPY python-api.py ./
 CMD ["python", "python-api.py"]
 ```
 
-В чем причина ошибки? И не понял что именно происходит в докер контейнере docker:latest?
-Моя сборка пробует выполняться в контйнере из образа docker:latest?
-Т.е. там внутри контейнера есть вложенный докер?
 
-При этом если я выполняю сборку вручную прям на раннере, то, все ок:
-
-![alt text](image-23.png)
-
-Но, сборка внутри докер контейнера - не идет.
-
-При этом пробовал вручную запустить контейнер из этого образа:
-
-![alt text](image-24.png)
-
-- получается докер не работает внутри контейера?
-В чем причина?
-
-Еще вопросы:
-Если я в .gitlab-ci.yml пропишу образы, например пробовал разные (сейчас закомментировал):
-
-```
-
-build:
- stage: build
-#  image: docker:20.10.8-dind
-#  image: centos:latest
-#  image: python:3.9-slim
- script:
-  - pwd
-  - ls -la
-  - docker --version
-  - docker build .
-```
-но, все равно ошибка. 
-В чем суть этих образов? Они где будут использоваться?
-Я предполагал они должны использоваться вместо образа по умолчанию У раннера - docker:latest?
-Пробовал разные образы у всех ошибки.
 
 Прошу помочь разобраться.
 
