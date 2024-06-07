@@ -486,14 +486,29 @@ RUN yum install -y wget && \
 
 Ошибка: ![alt text](image-32.png)
 
-???
+Поэтому переделал как было использовал образ с питоном.
+
+Итого год сборки:
+
+```
+FROM public.ecr.aws/docker/library/python:3.9-slim
+
+WORKDIR /python_api
+COPY requirements.txt ./
+RUN pip install -r requirements.txt
+COPY python-api.py ./
+CMD ["python", "python-api.py"]
+```
+
+
+Все собралось:
+
+![alt text](image-33.png)
 
 
 ### DevOps
 
 В репозитории содержится код проекта на Python. Проект — RESTful API сервис. Ваша задача — автоматизировать сборку образа с выполнением python-скрипта:
-
-
 
 1. Образ собирается на основе [centos:7](https://hub.docker.com/_/centos?tab=tags&page=1&ordering=last_updated).
 2. Python версии не ниже 3.7.

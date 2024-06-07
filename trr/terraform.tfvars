@@ -53,21 +53,21 @@ vm=[
       nat = true
       cmd =["echo hello",
       ]},           
-# ----------- vm3 ---------------------------------------------------------------
-      {name = "git-run2"
-      image = "fd82nvvtllmimo92uoul"   # ubuntu 22.04
-      #image = "fd8bem6begolined4qjs"   # centos 7 login
-      cpu = 2
-      core_fraction = 100
-      ram = 4
-      disk_size = 16
-      allow_stopping = true
-      platform = "standard-v1"
-      zone = "ru-central1-a"
-      preemptible = true
-      nat = true
-      cmd =["echo hello",
-      ]},
+# # ----------- vm3 ---------------------------------------------------------------
+#       {name = "git-run2"
+#       image = "fd82nvvtllmimo92uoul"   # ubuntu 22.04
+#       #image = "fd8bem6begolined4qjs"   # centos 7 login
+#       cpu = 2
+#       core_fraction = 100
+#       ram = 4
+#       disk_size = 16
+#       allow_stopping = true
+#       platform = "standard-v1"
+#       zone = "ru-central1-a"
+#       preemptible = true
+#       nat = true
+#       cmd =["echo hello",
+#       ]},
 # # ----------- vm3 ---------------------------------------------------------------
 #       {name = "git-run3"
 #       image = "fd82nvvtllmimo92uoul"   # ubuntu 22.04
