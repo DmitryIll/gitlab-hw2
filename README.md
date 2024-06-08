@@ -14,6 +14,8 @@
 
 2. Создайте виртуальную машину и установите на нее gitlab runner, подключите к вашему серверу gitlab  [по инструкции](https://docs.gitlab.com/runner/install/linux-repository.html) .
 
+### это были неудачные предварительные попытки, рабочее решение дальше
+
 создал ВМ и установил:
 
 ![alt text](image-1.png)
@@ -53,7 +55,6 @@ sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plug
 
 ![alt text](image-6.png)
 
-Пока не понял, в чем проблема?
 
 ![alt text](image-7.png)
 
@@ -160,14 +161,7 @@ shutdown_timeout = 0
 
 ## Основная часть
 
-### 2024.05.27
-
-Текущее состояние на 27 мая:
-
-Спасибо за подсказки, но, пока не заработало.
-Указал везде уж где только можно docker:dind
-Пробовал уже много вариантмо по-разному, всегда ошибки.
-Что же не так, в чем причина?
+### тоже неудачное решение 2024.05.27, рабочее дальше
 
 
 Код:
@@ -254,8 +248,6 @@ Cleaning up project directory and file based variables 00:00
 ERROR: Job failed: exit code 1
 ```
 
-Что же не так?
-
 В виде скрина:
 
 ![alt text](image-25.png)
@@ -273,11 +265,9 @@ COPY python-api.py ./
 CMD ["python", "python-api.py"]
 ```
 
+### рабочее решение
 
-
-Прошу помочь разобраться.
-
-Еще попробовал сделал второй раннер, на отедльнйо ВМ, но, раннер уже настроел внутри докер контейнера:
+Еще попробовал сделал второй раннер, на отедльнйо ВМ, но, раннер уже настроил внутри докер контейнера:
 
 - создал ВМ на убунте
 - установил докер
@@ -362,10 +352,7 @@ docker run -d --name gitlab-runner --restart always \
 
 ![alt text](image-30.png)
 
-Итого, получается проблема была в раннере?
-Что было не так?
-Как сделать раннер прям в ОС а не в контейнере?
-Почему не заработало если раннер прям в ОС был?
+Итого, получается проблема была в раннере.
 
 ### 30.052024 
 
@@ -373,7 +360,7 @@ docker run -d --name gitlab-runner --restart always \
 
 ![alt text](image-31.png)
 
-Все переделал заново - подтягиваю докер образ из зеркала:
+Все переделал заново - подтягиваю докер образ теперь из зеркала:
 
 теперь использую зеркало: https://gallery.ecr.aws/ 
 
@@ -424,9 +411,9 @@ shutdown_timeout = 0
     network_mtu = 0
 ```
 
-Далее столкнулся с проблемой не получается установить python 3.7 в докер контейнер.
+Далее столкнулся с проблемой не получается установить python 3.7 в докер контейнера из начального образа centos7.
 
-докер файл такой:
+докер файл такой (нашел в интернете):
 
 ```
 
@@ -482,13 +469,13 @@ RUN yum install -y wget && \
     rm -rf /var/cache/yum/*
 
 ```
-
+Не заработало.
 
 Ошибка: ![alt text](image-32.png)
 
 Поэтому переделал как было использовал образ с питоном.
 
-Итого год сборки:
+Итого код сборки:
 
 ```
 FROM public.ecr.aws/docker/library/python:3.9-slim
@@ -500,10 +487,76 @@ COPY python-api.py ./
 CMD ["python", "python-api.py"]
 ```
 
-
 Все собралось:
 
 ![alt text](image-33.png)
+
+### 06.08
+
+Попробовал собранный образ выложить в докер регистри который в гитлаб.
+
+Код сборки
+```
+variables:
+  CONTAINER_TAG_IMAGE: hello:gitlab-$CI_COMMIT_SHORT_SHA
+```
+и:
+```
+    - docker build --build-arg version=$CI_COMMIT_TAG --build-arg username=$CI_REGISTRY_USER --build-arg password=$CI_REGISTRY_PASSWORD -t $CI_REGISTRY/dmil/$CONTAINER_TAG_IMAGE .
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker push $CI_REGISTRY/dmil/$CONTAINER_TAG_IMAGE  
+```
+Но, в команде логина происходит ошибка:
+
+```
+$ docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+WARNING! Using --password via the CLI is insecure. Use --password-stdin.
+Error response from daemon: Get "https://git.dmil.ru:5050/v2/": net/http: request canceled while waiting for connection (Client.Timeout exceeded while awaiting headers)
+```
+или:
+
+![alt text](image-34.png)
+
+При этом пробовал выводить переменные, что бы понять что в них:
+
+![alt text](image-35.png)
+
+Видно что переменная с паролем маскируется:
+```
+$ echo "$PASS_FROM_CI"
+[MASKED]
+```
+Вопросы:
+1. Если переменная с паролем маскируется, то, применяется ли пароль корректно в строке с командой docker login ? Или пароль маскируется только кода выводить на экран нужно?
+2. В чем причина ошибки, что (как я понял) не работает регистри докера в gitlab:
+
+```
+Error response from daemon: Get "https://git.dmil.ru:5050/v2/": net/http: request canceled while waiting for connection (Client.Timeout exceeded while awaiting headers)
+```
+
+Что нужно сделать, что бы исправить ошибку?
+Я использую ВМ в яндекс облаке с оразом станадртным яндекс облака с gitlab.
+Видимо в конфигах gitlab нужно открыть этот порт?
+
+3. Что значит:
+```
+WARNING! Using --password via the CLI is insecure. Use --password-stdin.
+```
+что значит Use --password-stdin. ? Как это использовать?
+
+4. Если я буду пушить в яндекс регистри докер, то, как правильно сделать авторизацию к регистри в яндекс облаке? Видимо нужно создать временный токен на 12 часов, и его использовать? Но, что бы его создать нужно использовать длительный токен? Как его не светить и правильно указать в пайплайне?
+
+5. Я так пока и не понял почему у меня докер раннер не запускался если он на ВМ без докера. Может там вольюм в конфиге не нужно пробрасывать? В чем некорректность конфига?
+Т.е. конфиг, который генерит сам раннер при установке не корректный если раннер работает на ОС? Тут пока не понял.
+
+6. и не понял в каких случаях в коде нужно выполнять, например:
+
+```
+image: docker:20.10.8
+services:
+  - docker:20.10.8-dind
+```
+У меня и без этого работает, если раннер в докер контейнере.
 
 
 ### DevOps
@@ -511,12 +564,27 @@ CMD ["python", "python-api.py"]
 В репозитории содержится код проекта на Python. Проект — RESTful API сервис. Ваша задача — автоматизировать сборку образа с выполнением python-скрипта:
 
 1. Образ собирается на основе [centos:7](https://hub.docker.com/_/centos?tab=tags&page=1&ordering=last_updated).
+У меня все-таки образ начальный 
+```
+FROM public.ecr.aws/docker/library/python:3.9-slim
+```
+
 2. Python версии не ниже 3.7.
+
+У меня получился все-таки ниже.
+
 3. Установлены зависимости: `flask` `flask-jsonpify` `flask-restful`.
+Выполнено.
 4. Создана директория `/python_api`.
+Выполнено.
 5. Скрипт из репозитория размещён в /python_api.
+Выполнено.
 6. Точка вызова: запуск скрипта.
+Выполнено.
 7. При комите в любую ветку должен собираться docker image с форматом имени hello:gitlab-$CI_COMMIT_SHORT_SHA . Образ должен быть выложен в Gitlab registry или yandex registry.   
+
+
+
 
 ### Product Owner
 
